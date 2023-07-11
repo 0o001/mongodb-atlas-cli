@@ -363,6 +363,8 @@ github.com/mongodb-forks/digest v1.0.4 h1:9FrGTc7MGAchgaQBcXBnEwUM/Oo8obW7OGWxns
 github.com/mongodb-forks/digest v1.0.4/go.mod h1:eHRfgovT+dvSFfltrOa27hy1oR/rcwyDdp5H1ZQxEMA=
 github.com/mongodb-labs/cobra2snooty v0.16.0 h1:+q89WQ6KCBWKaxKoXnVmgpPk7DsIJv2LTcvMqCSgOD4=
 github.com/mongodb-labs/cobra2snooty v0.16.0/go.mod h1:eZYlGRCR9pVAqS6Wwz2eVQ9i3Dy4EtcG8jVkcfFWS7Y=
+github.com/mongodb/atlas-sdk-go/v20230201001 v20230201001.0.1-0.20230704083658-a4494758223e h1:NJU4nvxUuIk0iar80vpPlH2Xb6W21lkONmfLC2MvOh8=
+github.com/mongodb/atlas-sdk-go/v20230201001 v20230201001.0.1-0.20230704083658-a4494758223e/go.mod h1:qnaWSJzTwOSjygHbEk0Pa/sfbNMgz1DOybkv25TRFjE=
 github.com/mongodb/mongodb-atlas-kubernetes v1.8.0 h1:ooGBBdv42kdVwoqyo4zgOPN5hndXw/lvjdkeJdei9f4=
 github.com/mongodb/mongodb-atlas-kubernetes v1.8.0/go.mod h1:UcwdbJM4fxovpyhH2rkdQtdNCA7p+0qvQTFYQXL6/gI=
 github.com/montanaflynn/stats v0.0.0-20171201202039-1bf9dbcd8cbe/go.mod h1:wL8QJuTMNUDYhXwkmfOly8iTdp5TEcJFWZD2D7SIkUc=
