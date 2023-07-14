@@ -21,7 +21,7 @@ import (
 	"github.com/mongodb/mongodb-atlas-cli/internal/flag"
 	"github.com/mongodb/mongodb-atlas-cli/internal/mocks"
 	"github.com/mongodb/mongodb-atlas-cli/internal/test"
-	atlasv2 "go.mongodb.org/atlas-sdk/v20230201001/admin"
+	atlasv2 "go.mongodb.org/atlas-sdk/v20230201002/admin"
 )
 
 func TestUpdateOpts_Run(t *testing.T) {
@@ -40,7 +40,7 @@ func TestUpdateOpts_Run(t *testing.T) {
 
 	mockStore.
 		EXPECT().
-		UpdateStream(updateOpts.ProjectID, updateOpts.name, expected).
+		UpdateStream(updateOpts.ProjectID, updateOpts.name, expected.DataProcessRegion).
 		Return(expected, nil).
 		Times(1)
 
