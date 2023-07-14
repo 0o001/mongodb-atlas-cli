@@ -41,8 +41,8 @@ require (
 	github.com/tangzero/inflector v1.0.0
 	github.com/withfig/autocomplete-tools/packages/cobra v1.2.0
 	go.mongodb.org/atlas v0.30.0
-	go.mongodb.org/atlas-sdk/v20230201001 v20230201001.0.1-0.20230704083658-a4494758223e
-	go.mongodb.org/atlas-sdk/v20230201002 v20230201002.0.0
+	go.mongodb.org/atlas-sdk/v20230201001 v20230201001.0.0
+	go.mongodb.org/atlas-sdk/v20230201002 v20230201002.0.1-0.20230713083610-8d5d78c43b51
 	go.mongodb.org/mongo-driver v1.11.7
 	go.mongodb.org/ops-manager v0.53.0
 	golang.org/x/crypto v0.11.0
@@ -154,4 +154,4 @@ require (
 	sigs.k8s.io/structured-merge-diff/v4 v4.2.3 // indirect
 )
 
-replace go.mongodb.org/atlas-sdk/v20230201001 => github.com/mongodb/atlas-sdk-go/v20230201001 v20230201001.0.1-0.20230704083658-a4494758223e
+replace go.mongodb.org/atlas-sdk/v20230201002 => github.com/mongodb/atlas-sdk-go/v20230201002 v20230201002.0.1-0.20230713083610-8d5d78c43b51
