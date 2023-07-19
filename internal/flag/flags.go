@@ -360,4 +360,5 @@ const (
 	DataFederation                            = "dataFederation"                            // DataFederation flag
 	Value                                     = "value"                                     // Value flag
 	OverrunPolicy                             = "overrunPolicy"                             // OverrunPolicy flag
+	Instance                                  = "instance"                                  // Instance flag
 )
