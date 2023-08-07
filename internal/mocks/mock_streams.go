@@ -9,7 +9,7 @@ import (
 
 	gomock "github.com/golang/mock/gomock"
 	store "github.com/mongodb/mongodb-atlas-cli/internal/store"
-	admin "go.mongodb.org/atlas-sdk/v20230201002/admin"
+	admin "go.mongodb.org/atlas-sdk/v20230201004/admin"
 )
 
 // MockStreamsLister is a mock of StreamsLister interface.
