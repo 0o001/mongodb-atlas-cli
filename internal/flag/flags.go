@@ -361,4 +361,5 @@ const (
 	Value                                     = "value"                                     // Value flag
 	OverrunPolicy                             = "overrunPolicy"                             // OverrunPolicy flag
 	Instance                                  = "instance"                                  // Instance flag
+	InstanceShort                             = "i"                                         // InstanceShort flag
 )
