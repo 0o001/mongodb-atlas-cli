@@ -29,7 +29,7 @@ import (
 	"github.com/mongodb/mongodb-atlas-cli/test/e2e"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	atlasv2 "go.mongodb.org/atlas-sdk/v20230201003/admin"
+	atlasv2 "go.mongodb.org/atlas-sdk/v20230201004/admin"
 	"go.mongodb.org/atlas/mongodbatlas"
 )
 
@@ -90,6 +90,7 @@ const (
 	jobsEntity                   = "jobs"
 	snapshotsEntity              = "snapshots"
 	restoresEntity               = "restores"
+	compliancepolicyEntity       = "compliancepolicy"
 	teamsEntity                  = "teams"
 	setupEntity                  = "setup"
 )
