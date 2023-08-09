@@ -21,19 +21,15 @@ import (
 	"fmt"
 	"reflect"
 
-	"github.com/mongodb/mongodb-atlas-cli/internal/cli/atlas/datafederation"
+	"github.com/mongodb/mongodb-atlas-cli/internal/kubernetes/operator/datafederation"
 	"github.com/mongodb/mongodb-atlas-cli/internal/kubernetes/operator/dbusers"
 	"github.com/mongodb/mongodb-atlas-cli/internal/kubernetes/operator/deployment"
 	"github.com/mongodb/mongodb-atlas-cli/internal/kubernetes/operator/features"
 	"github.com/mongodb/mongodb-atlas-cli/internal/kubernetes/operator/project"
 	"github.com/mongodb/mongodb-atlas-cli/internal/kubernetes/operator/resources"
 	"github.com/mongodb/mongodb-atlas-cli/internal/store"
-	atlasV1 "github.com/mongodb/mongodb-atlas-kubernetes/pkg/api/v1"
-	"github.com/mongodb/mongodb-atlas-kubernetes/pkg/api/v1/common"
-	"github.com/mongodb/mongodb-atlas-kubernetes/pkg/api/v1/status"
 	atlasv2 "go.mongodb.org/atlas-sdk/v20230201003/admin"
 	"go.mongodb.org/atlas/mongodbatlas"
-	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/serializer/json"
 	"k8s.io/client-go/kubernetes/scheme"
@@ -263,7 +259,7 @@ func (e *ConfigExporter) exportDataFedertaion(projectName string) ([]runtime.Obj
 	fmt.Println("In exporter")
 	fmt.Println("ProjectID: ", e.projectID)
 	// Fetching list of data federations
-	dataFederations, err := e.dataProvider.DataLakes(e.projectID)
+	dataFederations, err := e.dataProvider.DataFederationList(e.projectID, "")
 	if err != nil {
 		panic(err)
 	}
@@ -271,118 +267,13 @@ func (e *ConfigExporter) exportDataFedertaion(projectName string) ([]runtime.Obj
 	j, _ := jsonv1.MarshalIndent(dataFederations, "", " ")
 	fmt.Println(">>>", string(j))
 
+	// TODO: change x to reasonable name
 	for _, obj := range dataFederations {
-		x, err = datafederation.BuildAtlasDataFederation(projectName)
-	}
-
-	// Storing each
-	convertCloudProviderConfig := func(cloudProviderConfig *mongodbatlas.CloudProviderConfig) *atlasV1.CloudProviderConfig {
-		if cloudProviderConfig == nil {
-			return &atlasV1.CloudProviderConfig{
-				AWS: &atlasV1.AWSProviderConfig{
-					RoleID:       "",
-					TestS3Bucket: "",
-				},
-			}
+		atlasDataFederation, err := datafederation.BuildAtlasDataFederation(projectName, obj, e.operatorVersion, e.targetNamespace, e.dictionaryForAtlasNames)
+		if err != nil {
+			return nil, err
 		}
-		return &atlasV1.CloudProviderConfig{
-			AWS: &atlasV1.AWSProviderConfig{
-				RoleID:       cloudProviderConfig.AWSConfig.RoleID,
-				TestS3Bucket: cloudProviderConfig.AWSConfig.TestS3Bucket,
-			},
-		}
-	}
-
-	convertDataFederationSpec := func(dataFederationSpec *mongodbatlas.DataLake) *atlasV1.DataFederationSpec {
-		return &atlasV1.DataFederationSpec{
-			Project:             common.ResourceRefNamespaced{Name: dataFederationSpec.GroupID, Namespace: e.targetNamespace},
-			Name:                dataFederationSpec.Name,
-			CloudProviderConfig: convertCloudProviderConfig(&dataFederationSpec.CloudProviderConfig),
-			DataProcessRegion:   &atlasV1.DataProcessRegion{CloudProvider: dataFederationSpec.DataProcessRegion.CloudProvider, Region: dataFederationSpec.DataProcessRegion.Region},
-		}
-	}
-
-	for _, obj := range dataFederations {
-		AtlasDataFederation := &atlasV1.AtlasDataFederation{
-			TypeMeta: v1.TypeMeta{
-				APIVersion: "atlas.mongodb.com/v1",
-				Kind:       "AtlasDataFederation",
-			},
-			ObjectMeta: v1.ObjectMeta{
-				Name:      resources.NormalizeAtlasName(fmt.Sprintf("%s-%s", projectName, obj.Name), e.dictionaryForAtlasNames),
-				Namespace: e.targetNamespace,
-				Labels: map[string]string{
-					features.ResourceVersion: e.operatorVersion,
-				},
-			},
-			Spec: *convertDataFederationSpec(&obj),
-			Status: status.DataFederationStatus{
-				Common: status.Common{
-					Conditions: []status.Condition{},
-				},
-			},
-		}
-		result = append(result, AtlasDataFederation)
+		result = append(result, atlasDataFederation)
 	}
 	return result, nil
-}
-
-func getDatabases(database []mongodbatlas.DataLakeDatabase) []atlasV1.Database {
-	var result []atlasV1.Database
-	for _, obj := range database {
-		atlasDatabase := atlasV1.Database{
-			Collections:            getCollection(obj.Collections),
-			MaxWildcardCollections: int(*obj.MaxWildcardCollections),
-			Name:                   obj.Name,
-			Views:                  getViews(obj.Views),
-		}
-		result = append(result, atlasDatabase)
-	}
-	return result
-}
-
-func getCollection(collections []mongodbatlas.DataLakeCollection) []atlasV1.Collection {
-	var result []atlasV1.Collection
-	for _, obj := range collections {
-		collection := atlasV1.Collection{
-			DataSources: getDataSources(obj.DataSources),
-			Name:        obj.Name,
-		}
-		result = append(result, collection)
-	}
-	return result
-}
-
-func getDataSources(dataSources []mongodbatlas.DataLakeDataSource) []atlasV1.DataSource {
-	var result []atlasV1.DataSource
-	var emptyarr []string
-	for _, obj := range dataSources {
-		dataSource := atlasV1.DataSource{
-			AllowInsecure:       false,
-			Collection:          "",
-			CollectionRegex:     "",
-			Database:            "",
-			DatabaseRegex:       "",
-			DefaultFormat:       obj.DefaultFormat,
-			Path:                obj.Path,
-			ProvenanceFieldName: "",
-			StoreName:           obj.StoreName,
-			Urls:                emptyarr,
-		}
-		result = append(result, dataSource)
-	}
-	return result
-}
-
-func getViews(views []mongodbatlas.DataLakeDatabaseView) []atlasV1.View {
-	var result []atlasV1.View
-	for _, obj := range views {
-		view := atlasV1.View{
-			Name:     obj.Name,
-			Pipeline: obj.Pipeline,
-			Source:   obj.Source,
-		}
-		result = append(result, view)
-	}
-	return result
 }

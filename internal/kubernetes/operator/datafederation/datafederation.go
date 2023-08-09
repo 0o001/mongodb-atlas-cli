@@ -17,17 +17,19 @@ package datafederation
 import (
 	"fmt"
 
+	"github.com/aws/aws-sdk-go-v2/aws"
 	"github.com/mongodb/mongodb-atlas-cli/internal/kubernetes/operator/features"
 	"github.com/mongodb/mongodb-atlas-cli/internal/kubernetes/operator/resources"
 	atlasV1 "github.com/mongodb/mongodb-atlas-kubernetes/pkg/api/v1"
 	"github.com/mongodb/mongodb-atlas-kubernetes/pkg/api/v1/common"
 	"github.com/mongodb/mongodb-atlas-kubernetes/pkg/api/v1/status"
-	"go.mongodb.org/atlas/mongodbatlas"
+	atlasv2 "go.mongodb.org/atlas-sdk/v20230201003/admin"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
+	// "github.com/mongodb/mongodb-atlas-cli/internal/store"
 )
 
-func (e *ConfigExporter) BuildAtlasDataFederation(projectName string, dataFederation mongodbatlas.DataLake) (runtime.Object, error) {
+func BuildAtlasDataFederation(projectName string, dataFederation atlasv2.DataLakeTenant, operatorVersion, targetNamespace string, dictionary map[string]string) (runtime.Object, error) {
 
 	AtlasDataFederation := &atlasV1.AtlasDataFederation{
 		TypeMeta: v1.TypeMeta{
@@ -35,13 +37,13 @@ func (e *ConfigExporter) BuildAtlasDataFederation(projectName string, dataFedera
 			Kind:       "AtlasDataFederation",
 		},
 		ObjectMeta: v1.ObjectMeta{
-			Name:      resources.NormalizeAtlasName(fmt.Sprintf("%s-%s", projectName, obj.Name), e.dictionaryForAtlasNames),
-			Namespace: e.targetNamespace,
+			Name:      resources.NormalizeAtlasName(fmt.Sprintf("%s-%s", projectName, *dataFederation.Name), dictionary),
+			Namespace: targetNamespace,
 			Labels: map[string]string{
-				features.ResourceVersion: e.operatorVersion,
+				features.ResourceVersion: operatorVersion,
 			},
 		},
-		Spec: getDataFederationSpec(&dataFederation),
+		Spec: GetDataFederationSpec(&dataFederation, targetNamespace, projectName),
 		Status: status.DataFederationStatus{
 			Common: status.Common{
 				Conditions: []status.Condition{},
@@ -51,7 +53,18 @@ func (e *ConfigExporter) BuildAtlasDataFederation(projectName string, dataFedera
 	return AtlasDataFederation, nil
 }
 
-func getCloudProviderConfig(cloudProviderConfig *mongodbatlas.CloudProviderConfig) *atlasV1.CloudProviderConfig {
+func GetDataFederationSpec(dataFederationSpec *atlasv2.DataLakeTenant, targetNamespace, projectName string) atlasV1.DataFederationSpec {
+	return atlasV1.DataFederationSpec{
+		Project:             common.ResourceRefNamespaced{Name: projectName, Namespace: targetNamespace},
+		Name:                aws.ToString(dataFederationSpec.Name),
+		CloudProviderConfig: GetCloudProviderConfig(dataFederationSpec.CloudProviderConfig),
+		DataProcessRegion:   &atlasV1.DataProcessRegion{CloudProvider: dataFederationSpec.DataProcessRegion.CloudProvider, Region: dataFederationSpec.DataProcessRegion.Region},
+		Storage:             &atlasV1.Storage{Databases: GetDatabases(dataFederationSpec.Storage.Databases), Stores: GetStores(dataFederationSpec.Storage.Stores)},
+		// PrivateEndpoints: GetPrivateEndpoints(),
+	}
+}
+
+func GetCloudProviderConfig(cloudProviderConfig *atlasv2.DataLakeCloudProviderConfig) *atlasV1.CloudProviderConfig {
 	if cloudProviderConfig == nil {
 		return &atlasV1.CloudProviderConfig{
 			AWS: &atlasV1.AWSProviderConfig{
@@ -62,77 +75,90 @@ func getCloudProviderConfig(cloudProviderConfig *mongodbatlas.CloudProviderConfi
 	}
 	return &atlasV1.CloudProviderConfig{
 		AWS: &atlasV1.AWSProviderConfig{
-			RoleID:       cloudProviderConfig.AWSConfig.RoleID,
-			TestS3Bucket: cloudProviderConfig.AWSConfig.TestS3Bucket,
+			RoleID:       cloudProviderConfig.Aws.RoleId,
+			TestS3Bucket: cloudProviderConfig.Aws.TestS3Bucket,
 		},
 	}
 }
 
-func getDataFederationSpec(dataFederationSpec *mongodbatlas.DataLake) atlasV1.DataFederationSpec {
-	return atlasV1.DataFederationSpec{
-		Project:             common.ResourceRefNamespaced{Name: dataFederationSpec.GroupID, Namespace: e.targetNamespace},
-		Name:                dataFederationSpec.Name,
-		CloudProviderConfig: getCloudProviderConfig(&dataFederationSpec.CloudProviderConfig),
-		DataProcessRegion:   &atlasV1.DataProcessRegion{CloudProvider: dataFederationSpec.DataProcessRegion.CloudProvider, Region: dataFederationSpec.DataProcessRegion.Region},
-	}
-}
-
-func getDatabases(database []mongodbatlas.DataLakeDatabase) []atlasV1.Database {
+func GetDatabases(database []atlasv2.DataLakeDatabaseInstance) []atlasV1.Database {
 	var result []atlasV1.Database
 	for _, obj := range database {
 		atlasDatabase := atlasV1.Database{
-			Collections:            getCollection(obj.Collections),
-			MaxWildcardCollections: int(*obj.MaxWildcardCollections),
-			Name:                   obj.Name,
-			Views:                  getViews(obj.Views),
+			Collections:            GetCollection(obj.Collections),
+			MaxWildcardCollections: aws.ToInt(obj.MaxWildcardCollections),
+			Name:                   aws.ToString(obj.Name),
+			Views:                  GetViews(obj.Views),
 		}
 		result = append(result, atlasDatabase)
 	}
 	return result
 }
 
-func getCollection(collections []mongodbatlas.DataLakeCollection) []atlasV1.Collection {
+func GetCollection(collections []atlasv2.DataLakeDatabaseCollection) []atlasV1.Collection {
 	var result []atlasV1.Collection
 	for _, obj := range collections {
 		collection := atlasV1.Collection{
-			DataSources: getDataSources(obj.DataSources),
-			Name:        obj.Name,
+			DataSources: GetDataSources(obj.DataSources),
+			Name:        aws.ToString(obj.Name),
 		}
 		result = append(result, collection)
 	}
 	return result
 }
 
-func getDataSources(dataSources []mongodbatlas.DataLakeDataSource) []atlasV1.DataSource {
+func GetDataSources(dataSources []atlasv2.DataLakeDatabaseDataSourceSettings) []atlasV1.DataSource {
 	var result []atlasV1.DataSource
-	var emptyarr []string
 	for _, obj := range dataSources {
 		dataSource := atlasV1.DataSource{
-			AllowInsecure:       false,
-			Collection:          "",
-			CollectionRegex:     "",
-			Database:            "",
-			DatabaseRegex:       "",
-			DefaultFormat:       obj.DefaultFormat,
-			Path:                obj.Path,
-			ProvenanceFieldName: "",
-			StoreName:           obj.StoreName,
-			Urls:                emptyarr,
+			AllowInsecure:       aws.ToBool(obj.AllowInsecure),
+			Collection:          aws.ToString(obj.Collection),
+			CollectionRegex:     aws.ToString(obj.CollectionRegex),
+			Database:            aws.ToString(obj.Database),
+			DatabaseRegex:       aws.ToString(obj.DatabaseRegex),
+			DefaultFormat:       aws.ToString(obj.DefaultFormat),
+			Path:                aws.ToString(obj.Path),
+			ProvenanceFieldName: aws.ToString(obj.ProvenanceFieldName),
+			StoreName:           aws.ToString(obj.StoreName),
+			Urls:                obj.Urls,
 		}
 		result = append(result, dataSource)
 	}
 	return result
 }
 
-func getViews(views []mongodbatlas.DataLakeDatabaseView) []atlasV1.View {
+func GetViews(views []atlasv2.DataLakeApiBase) []atlasV1.View {
 	var result []atlasV1.View
 	for _, obj := range views {
 		view := atlasV1.View{
-			Name:     obj.Name,
-			Pipeline: obj.Pipeline,
-			Source:   obj.Source,
+			Name:     aws.ToString(obj.Name),
+			Pipeline: aws.ToString(obj.Pipeline),
+			Source:   aws.ToString(obj.Source),
 		}
 		result = append(result, view)
 	}
 	return result
 }
+
+func GetStores(stores []atlasv2.DataLakeStoreSettings) []atlasV1.Store {
+	var result []atlasV1.Store
+	for _, obj := range stores {
+		store := atlasV1.Store{
+			Name:                     aws.ToString(obj.Name),
+			Provider:                 obj.Provider,
+			AdditionalStorageClasses: obj.AdditionalStorageClasses,
+			Bucket:                   aws.ToString(obj.Bucket),
+			Delimiter:                aws.ToString(obj.Delimiter),
+			IncludeTags:              aws.ToBool(obj.IncludeTags),
+			Prefix:                   aws.ToString(obj.Prefix),
+			Public:                   aws.ToBool(obj.Public),
+			Region:                   aws.ToString(obj.Region),
+		}
+		result = append(result, store)
+	}
+	return result
+}
+
+// func GetPrivateEndpoints(privateEndpoint []atlasv2.ListDataFederationPrivateEndpointsApiParams) []atlasV1.DataFederationPE {
+// 	hold, err := store.DataLakePrivateEndpointLister.DataLakePrivateEndpoints(privateEndpoint)
+// }
