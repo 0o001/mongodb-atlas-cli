@@ -71,4 +71,5 @@ type AtlasOperatorGenericStore interface {
 	AtlasOperatorProjectStore
 	AtlasOperatorClusterStore
 	AtlasOperatorDBUsersStore
+	DataLakeStore
 }
