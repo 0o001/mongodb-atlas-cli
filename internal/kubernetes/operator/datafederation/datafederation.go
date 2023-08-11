@@ -23,14 +23,12 @@ import (
 	atlasV1 "github.com/mongodb/mongodb-atlas-kubernetes/pkg/api/v1"
 	"github.com/mongodb/mongodb-atlas-kubernetes/pkg/api/v1/common"
 	"github.com/mongodb/mongodb-atlas-kubernetes/pkg/api/v1/status"
-	atlasv2 "go.mongodb.org/atlas-sdk/v20230201003/admin"
+	atlasv2 "go.mongodb.org/atlas-sdk/v20230201004/admin"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
-	// "github.com/mongodb/mongodb-atlas-cli/internal/store"
 )
 
-func BuildAtlasDataFederation(projectName string, dataFederation atlasv2.DataLakeTenant, operatorVersion, targetNamespace string, dictionary map[string]string) (runtime.Object, error) {
-
+func BuildAtlasDataFederation(dataFederation atlasv2.DataLakeTenant, projectName, operatorVersion, targetNamespace string, dictionary map[string]string) (runtime.Object, error) {
 	AtlasDataFederation := &atlasV1.AtlasDataFederation{
 		TypeMeta: v1.TypeMeta{
 			APIVersion: "atlas.mongodb.com/v1",
@@ -60,7 +58,6 @@ func GetDataFederationSpec(dataFederationSpec *atlasv2.DataLakeTenant, targetNam
 		CloudProviderConfig: GetCloudProviderConfig(dataFederationSpec.CloudProviderConfig),
 		DataProcessRegion:   &atlasV1.DataProcessRegion{CloudProvider: dataFederationSpec.DataProcessRegion.CloudProvider, Region: dataFederationSpec.DataProcessRegion.Region},
 		Storage:             &atlasV1.Storage{Databases: GetDatabases(dataFederationSpec.Storage.Databases), Stores: GetStores(dataFederationSpec.Storage.Stores)},
-		// PrivateEndpoints: GetPrivateEndpoints(),
 	}
 }
 
@@ -158,7 +155,3 @@ func GetStores(stores []atlasv2.DataLakeStoreSettings) []atlasV1.Store {
 	}
 	return result
 }
-
-// func GetPrivateEndpoints(privateEndpoint []atlasv2.ListDataFederationPrivateEndpointsApiParams) []atlasV1.DataFederationPE {
-// 	hold, err := store.DataLakePrivateEndpointLister.DataLakePrivateEndpoints(privateEndpoint)
-// }

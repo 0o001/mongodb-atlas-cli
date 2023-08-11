@@ -19,7 +19,7 @@ package store
 import (
 	"os"
 
-	"go.mongodb.org/atlas-sdk/v20230201003/admin"
+	"go.mongodb.org/atlas-sdk/v20230201004/admin"
 )
 
 //go:generate mockgen -destination=../../mocks/atlas/mock_data_federation.go -package=atlas github.com/mongodb/mongodb-atlas-cli/internal/store/atlas DataFederationLister,DataFederationDescriber,DataFederationCreator,DataFederationUpdater,DataFederationDeleter,DataFederationLogDownloader
@@ -46,15 +46,6 @@ type DataFederationUpdater interface {
 
 type DataFederationLogDownloader interface {
 	DataFederationLogs(string, string, int64, int64) (*os.File, error)
-}
-
-type DataFederationStore interface {
-	DataFederationLister
-	DataFederationCreator
-	DataFederationDeleter
-	DataFederationDescriber
-	DataFederationUpdater
-	DataFederationLogDownloader
 }
 
 // DataFederationList encapsulates the logic to manage different cloud providers.

@@ -66,11 +66,19 @@ type AtlasOperatorOrgStore interface {
 	ProjectAPIKeyAssigner
 }
 
+type AtlasOperatorDataFederationStore interface {
+	DataFederationLister
+	DataFederationCreator
+	DataFederationDeleter
+	DataFederationDescriber
+	DataFederationUpdater
+	DataFederationLogDownloader
+}
+
 type AtlasOperatorGenericStore interface {
 	AtlasOperatorOrgStore
 	AtlasOperatorProjectStore
 	AtlasOperatorClusterStore
 	AtlasOperatorDBUsersStore
-	//atlas.DataFederationStore
-	DataFederationStore
+	AtlasOperatorDataFederationStore
 }

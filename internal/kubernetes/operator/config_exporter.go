@@ -16,7 +16,6 @@ package operator
 
 import (
 	"bytes"
-	jsonv1 "encoding/json"
 	"errors"
 	"fmt"
 	"reflect"
@@ -256,24 +255,19 @@ func fetchClusterNames(clustersProvider store.AtlasAllClustersLister, projectID 
 
 func (e *ConfigExporter) exportDataFedertaion(projectName string) ([]runtime.Object, error) {
 	var result []runtime.Object
-	fmt.Println("In exporter")
-	fmt.Println("ProjectID: ", e.projectID)
-	// Fetching list of data federations
 	dataFederations, err := e.dataProvider.DataFederationList(e.projectID, "")
 	if err != nil {
-		panic(err)
+		return nil, err
 	}
-	// TODO: delete vvv
-	j, _ := jsonv1.MarshalIndent(dataFederations, "", " ")
-	fmt.Println(">>>", string(j))
 
-	// TODO: change x to reasonable name
 	for _, obj := range dataFederations {
-		atlasDataFederation, err := datafederation.BuildAtlasDataFederation(projectName, obj, e.operatorVersion, e.targetNamespace, e.dictionaryForAtlasNames)
+		atlasDataFederation, err := datafederation.BuildAtlasDataFederation(obj, projectName, e.operatorVersion, e.targetNamespace, e.dictionaryForAtlasNames)
 		if err != nil {
 			return nil, err
 		}
+
 		result = append(result, atlasDataFederation)
 	}
+
 	return result, nil
 }
