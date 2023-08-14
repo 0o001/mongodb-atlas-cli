@@ -48,15 +48,6 @@ type DataFederationLogDownloader interface {
 	DataFederationLogs(string, string, int64, int64) (*os.File, error)
 }
 
-type DataFederationStore interface {
-	DataFederationLister
-	DataFederationCreator
-	DataFederationDeleter
-	DataFederationDescriber
-	DataFederationUpdater
-	DataFederationLogDownloader
-}
-
 // DataFederationList encapsulates the logic to manage different cloud providers.
 func (s *Store) DataFederationList(projectID string, typeFlag string) ([]admin.DataLakeTenant, error) {
 	req := s.clientv2.DataFederationApi.ListFederatedDatabases(s.ctx, projectID)
