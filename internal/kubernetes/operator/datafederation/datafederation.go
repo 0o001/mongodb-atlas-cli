@@ -28,8 +28,6 @@ import (
 	"k8s.io/apimachinery/pkg/runtime"
 )
 
-//go:generate mockgen -destination=../mocks/mock_datafederation.go -package=mocks github.com/mongodb/mongodb-atlas-cli/internal/kubernetes/operator/datafederation BuildAtlasDataFederation
-
 const (
 	DeletingState = "DELETING"
 	DeletedState  = "DELETED"
