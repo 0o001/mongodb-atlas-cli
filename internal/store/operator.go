@@ -16,7 +16,6 @@ package store
 
 //go:generate mockgen -destination=../mocks/mock_atlas_operator_cluster_store.go -package=mocks github.com/mongodb/mongodb-atlas-cli/internal/store AtlasOperatorClusterStore
 //go:generate mockgen -destination=../mocks/mock_atlas_operator_project_store.go -package=mocks github.com/mongodb/mongodb-atlas-cli/internal/store AtlasOperatorProjectStore
-//go:generate mockgen -destination=../mocks/mock_atlas_operator_dat_federation_store.go -package=mocks github.com/mongodb/mongodb-atlas-cli/internal/store AtlasOperatorDataFederationStore
 
 type AtlasOperatorProjectStore interface {
 	AtlasOperatorTeamsStore
@@ -67,19 +66,10 @@ type AtlasOperatorOrgStore interface {
 	ProjectAPIKeyAssigner
 }
 
-type AtlasOperatorDataFederationStore interface {
-	DataFederationLister
-	DataFederationCreator
-	DataFederationDeleter
-	DataFederationDescriber
-	DataFederationUpdater
-	DataFederationLogDownloader
-}
-
 type AtlasOperatorGenericStore interface {
 	AtlasOperatorOrgStore
 	AtlasOperatorProjectStore
 	AtlasOperatorClusterStore
 	AtlasOperatorDBUsersStore
-	AtlasOperatorDataFederationStore
+	DataFederationStore
 }
