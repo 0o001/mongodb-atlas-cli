@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-///go:build unit
+//go:build unit
 
 package datafederation
 
@@ -35,23 +35,12 @@ import (
 const projectName = "testProject-1"
 const dataFederationName = "testDataFederation-1"
 const targetNamespace = "test-namespace-1"
-const zoneName1 = "us-east-1"
-
-const projectID = "TestProjectID"
 const resourceVersion = "x.y.z"
 
 func Test_BuildAtlasDataFederation(t *testing.T) {
-	// ctl := gomock.NewController(t)
-	// dataFederationStore := mocks.NewMockDataFederationStore(ctl)
 	dictionary := resources.AtlasNameToKubernetesName()
-	//featureValidator := mocks.NewMockFeatureValidator(ctl)
 
 	t.Run("Can import Data Federations", func(t *testing.T) {
-		const projectName = "testProject-1"
-		const dataFederationName = "testDataFederation-1"
-		const targetNamespace = "test-namespace-1"
-		const zoneName1 = "us-east-1"
-
 		dataFederation := &atlas.DataFederationInstance{
 
 			CloudProviderConfig: &atlas.CloudProviderConfig{
@@ -115,8 +104,6 @@ func Test_BuildAtlasDataFederation(t *testing.T) {
 				},
 			},
 		}
-
-		// dataFederationStore.EXPECT().DataFederation(projectID, dataFederationName).Return(dataFederation, nil)
 
 		expected := &atlasV1.AtlasDataFederation{
 			TypeMeta: v1.TypeMeta{
@@ -200,8 +187,6 @@ func Test_BuildAtlasDataFederation(t *testing.T) {
 				},
 			},
 		}
-
-		//featureValidator.EXPECT().FeatureExist(features.ResourceAtlasDataFederation, "storage").Return(true)
 
 		got, err := BuildAtlasDataFederation(dataFederation, projectName, resourceVersion, targetNamespace, dictionary)
 		if err != nil {

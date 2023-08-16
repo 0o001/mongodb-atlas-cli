@@ -71,5 +71,5 @@ type AtlasOperatorGenericStore interface {
 	AtlasOperatorProjectStore
 	AtlasOperatorClusterStore
 	AtlasOperatorDBUsersStore
-	DataFederationStore
+	DataFederationLister
 }

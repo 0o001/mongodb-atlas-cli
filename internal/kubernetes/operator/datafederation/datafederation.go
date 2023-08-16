@@ -28,12 +28,14 @@ import (
 	"k8s.io/apimachinery/pkg/runtime"
 )
 
+//go:generate mockgen -destination=../mocks/mock_datafederation.go -package=mocks github.com/mongodb/mongodb-atlas-cli/internal/kubernetes/operator/datafederation BuildAtlasDataFederation
+
 const (
 	DeletingState = "DELETING"
 	DeletedState  = "DELETED"
 )
 
-func BuildAtlasDataFederation( /*dataFederationStore store.AtlasOperatorDataFederationStore,*/ dataFederation *atlas.DataFederationInstance, projectName, operatorVersion, targetNamespace string, dictionary map[string]string) (runtime.Object, error) {
+func BuildAtlasDataFederation(dataFederation *atlas.DataFederationInstance, projectName, operatorVersion, targetNamespace string, dictionary map[string]string) (runtime.Object, error) {
 	if !isDataFederationExportable(dataFederation) {
 		return nil, nil
 	}

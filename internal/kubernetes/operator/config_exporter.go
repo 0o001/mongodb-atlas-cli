@@ -117,7 +117,7 @@ func (e *ConfigExporter) Run() (string, error) {
 	}
 	resources = append(resources, deploymentsResources...)
 
-	dataFederationResource, err := e.exportDataFedertaion(projectName)
+	dataFederationResource, err := e.exportDataFederation(projectName)
 	if err != nil {
 		return "", err
 	}
@@ -253,9 +253,9 @@ func fetchClusterNames(clustersProvider store.AtlasAllClustersLister, projectID 
 	return result, nil
 }
 
-func (e *ConfigExporter) exportDataFedertaion(projectName string) ([]runtime.Object, error) {
+func (e *ConfigExporter) exportDataFederation(projectName string) ([]runtime.Object, error) {
 	var result []runtime.Object
-	dataFederations, err := e.dataProvider.DataFederationList(e.projectID, "")
+	dataFederations, err := e.dataProvider.DataFederationList(e.projectID)
 	if err != nil {
 		return nil, err
 	}
