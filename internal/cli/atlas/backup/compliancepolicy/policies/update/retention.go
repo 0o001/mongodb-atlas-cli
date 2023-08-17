@@ -63,7 +63,7 @@ func (opts *UpdateOpts) askForRetention(item *atlasv2.DiskBackupApiPolicyItem) (
 }
 
 func convertRetentionString(timeStr string) (int, string, error) {
-	re := regexp.MustCompile(`^(\d+)\s*(hour|day|month)s?$`)
+	re := regexp.MustCompile(`^(\d+)\s*(hour|day|month|week)s?$`)
 	matches := re.FindStringSubmatch(strings.ToLower(timeStr))
 
 	if matches == nil || len(matches) < 3 {
