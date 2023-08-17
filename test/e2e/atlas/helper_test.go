@@ -737,6 +737,28 @@ func createDBUserWithCert(projectID, username string) error {
 	return nil
 }
 
+func createDataFederationForProject(projectID string) (string, error) {
+	name := "Test-data-federation"
+	opts := atlasv2.NewDataLakeTenant() // change to use AKO newdatafederationinstance as it also contains metadata
+	opts.Name = &name
+	opts.DataProcessRegion = &atlasv2.DataLakeDataProcessRegion{
+		CloudProvider: "AWS",
+		Region:        "US__EAST_1",
+	}
+	var client *atlasv2.APIClient
+	dataFed, _, err := client.DataFederationApi.CreateFederatedDatabase(context.Background(), projectID, opts).SkipRoleValidation(false).Execute()
+	if err != nil {
+		return "", err
+	}
+	return *dataFed.Name, nil
+}
+
+func deleteDataFederationForProject(projectID, dataFedName string) error {
+	var client *atlasv2.APIClient
+	_, _, err := client.DataFederationApi.DeleteFederatedDatabase(context.Background(), projectID, dataFedName).Execute()
+	return err
+}
+
 func ensureCluster(t *testing.T, cluster *atlasv2.AdvancedClusterDescription, clusterName, version string, diskSizeGB float64, terminationProtection bool) {
 	t.Helper()
 	a := assert.New(t)

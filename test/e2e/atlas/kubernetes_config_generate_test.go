@@ -1513,3 +1513,130 @@ func atlasBackupSchedule(objects []runtime.Object) (*atlasV1.AtlasBackupSchedule
 	}
 	return nil, false
 }
+
+func referenceDataFederation(name, namespace, region, projectName string, labels map[string]string) *atlasV1.AtlasDataFederation {
+	dictionary := resources.AtlasNameToKubernetesName()
+	return &atlasV1.AtlasDataFederation{
+		TypeMeta: v1.TypeMeta{
+			Kind:       "AtlasDataFederation",
+			APIVersion: "atlas.mongodb.com/v1",
+		},
+		ObjectMeta: v1.ObjectMeta{
+			Name:      resources.NormalizeAtlasName(fmt.Sprintf("%s-%s", projectName, name), dictionary),
+			Namespace: namespace,
+			Labels:    labels,
+		},
+		Spec: atlasV1.DataFederationSpec{
+			Project: common.ResourceRefNamespaced{
+				Name:      resources.NormalizeAtlasName(projectName, dictionary),
+				Namespace: namespace,
+			},
+			Name: name,
+			CloudProviderConfig: &atlasV1.CloudProviderConfig{
+				AWS: &atlasV1.AWSProviderConfig{
+					RoleID:       "TestRoleID",
+					TestS3Bucket: "TestBucket",
+				},
+			},
+			DataProcessRegion: &atlasV1.DataProcessRegion{
+				CloudProvider: "TestProvider",
+				Region:        "TestRegion",
+			},
+			Storage: &atlasV1.Storage{
+				Databases: []atlasV1.Database{
+					{
+						Collections: []atlasV1.Collection{
+							{
+								DataSources: []atlasV1.DataSource{
+									{
+										AllowInsecure:       false,
+										Collection:          "TestCollection",
+										CollectionRegex:     "TestCollectionRegex",
+										Database:            "TestDatabase",
+										DatabaseRegex:       "TestDatabaseRegex",
+										DefaultFormat:       "TestFormat",
+										Path:                "TestPath",
+										ProvenanceFieldName: "TestFieldName",
+										StoreName:           "TestStoreName",
+										Urls:                []string{"TestUrl"},
+									},
+								},
+								Name: "TestName",
+							},
+						},
+						MaxWildcardCollections: 10,
+						Name:                   "TestName",
+						Views: []atlasV1.View{
+							{
+								Name:     "TestName",
+								Pipeline: "TestPipeline",
+								Source:   "TestSource",
+							},
+						},
+					},
+				},
+				Stores: []atlasV1.Store{
+					{
+						Name:                     "TestName",
+						Provider:                 "TestProvider",
+						AdditionalStorageClasses: []string{"TestClasses"},
+						Bucket:                   "TestBucket",
+						Delimiter:                "TestDelimiter",
+						IncludeTags:              false,
+						Prefix:                   "TestPrefix",
+						Public:                   false,
+						Region:                   "TestRegion",
+					},
+				},
+			},
+		},
+	}
+}
+
+func TestKubernetesConfigGenerate_DataFederation(t *testing.T) {
+	n, err := e2e.RandInt(255)
+	require.NoError(t, err)
+	g := newAtlasE2ETestGenerator(t)
+	g.enableBackup = true
+	g.generateProject(fmt.Sprintf("kubernetes-%s", n))
+	g.generateDataFederation()
+	//expectedDataFederation := referenceDataFederation()
+	cliPath, err := e2e.AtlasCLIBin()
+	require.NoError(t, err)
+
+	// always register atlas entities
+	require.NoError(t, atlasV1.AddToScheme(scheme.Scheme))
+
+	t.Run("Generate valid resources of ONE project and ONE data federation", func(t *testing.T) {
+		cmd := exec.Command(cliPath,
+			"kubernetes",
+			"config",
+			"generate",
+			"--projectId",
+			g.projectID,
+			"--targetNamespace",
+			targetNamespace)
+		cmd.Env = os.Environ()
+
+		resp, err := cmd.CombinedOutput()
+		t.Log(string(resp))
+
+		a := assert.New(t)
+		a.NoError(err, string(resp))
+
+		var objects []runtime.Object
+		t.Run("Output can be decoded", func(t *testing.T) {
+			objects, err = getK8SEntities(resp)
+			require.NoError(t, err, "should not fail on decode")
+			require.NotEmpty(t, objects, "result should not be empty")
+		})
+		t.Run("Project present with valid name", func(t *testing.T) {
+			p, found := findAtlasProject(objects)
+			if !found {
+				t.Fatal("AtlasProject is not found in results")
+			}
+			assert.Equal(t, targetNamespace, p.Namespace)
+		})
+
+	})
+}
