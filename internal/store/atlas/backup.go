@@ -33,6 +33,9 @@ type CompliancePolicyUpdater interface {
 type CompliancePolicyPolicyItemUpdater interface {
 	UpdatePolicyItem(projectID string, policyItem *atlasv2.DiskBackupApiPolicyItem) (*atlasv2.DataProtectionSettings, *http.Response, error)
 }
+type CompliancePolicyPolicyItemCreator interface {
+	CreatePolicyItem(projectID string, policyItem *atlasv2.DiskBackupApiPolicyItem) (*atlasv2.DataProtectionSettings, *http.Response, error)
+}
 type CompliancePolicy interface {
 	CompliancePolicyDescriber
 	CompliancePolicyUpdater
@@ -69,6 +72,37 @@ func (s *Store) UpdatePolicyItem(projectID string, policyItem *atlasv2.DiskBacku
 		return nil, nil, fmt.Errorf("couldn't update compliance policy: %w", err)
 	}
 	return result, httpResp, err
+}
+
+func (s *Store) CreatePolicyItem(projectID string, policyItem *atlasv2.DiskBackupApiPolicyItem) (*atlasv2.DataProtectionSettings, *http.Response, error) {
+	compliancePolicy, _, err := s.clientv2.CloudBackupsApi.GetDataProtectionSettings(s.ctx, projectID).Execute()
+	if err != nil {
+		return nil, nil, fmt.Errorf("couldn't update compliance policy: %w", err)
+	}
+
+	err = addItem(compliancePolicy, policyItem)
+	if err != nil {
+		return nil, nil, fmt.Errorf("couldn't update compliance policy: %w", err)
+	}
+
+	result, httpResp, err := s.clientv2.CloudBackupsApi.UpdateDataProtectionSettings(s.ctx, projectID, compliancePolicy).Execute()
+	if err != nil {
+		return nil, httpResp, fmt.Errorf("couldn't update compliance policy: %w", err)
+	}
+	return result, httpResp, err
+}
+
+func addItem(compliancePolicy *atlasv2.DataProtectionSettings, item *atlasv2.DiskBackupApiPolicyItem) error {
+	if compliancePolicy == nil || item == nil {
+		return errors.New("either compliancePolicy or item is nil")
+	}
+	if item.FrequencyType == "ondemand" {
+		compliancePolicy.OnDemandPolicyItem = item
+	} else {
+		compliancePolicy.ScheduledPolicyItems = append(compliancePolicy.ScheduledPolicyItems, *item)
+	}
+
+	return nil
 }
 
 // replaceItem searches for a DiskBackupApiPolicyItem within the provided DataProtectionSettings by its ID.
