@@ -738,25 +738,67 @@ func createDBUserWithCert(projectID, username string) error {
 }
 
 func createDataFederationForProject(projectID string) (string, error) {
-	name := "Test-data-federation"
-	opts := atlasv2.NewDataLakeTenant() // change to use AKO newdatafederationinstance as it also contains metadata
-	opts.Name = &name
-	opts.DataProcessRegion = &atlasv2.DataLakeDataProcessRegion{
-		CloudProvider: "AWS",
-		Region:        "US__EAST_1",
-	}
-	var client *atlasv2.APIClient
-	dataFed, _, err := client.DataFederationApi.CreateFederatedDatabase(context.Background(), projectID, opts).SkipRoleValidation(false).Execute()
+	dataFederationName := "Test-data-federation"
+	roleID := "testId"
+	testBucket := "testBucket"
+
+	cliPath, err := e2e.AtlasCLIBin()
 	if err != nil {
 		return "", err
 	}
-	return *dataFed.Name, nil
+	args := []string{
+		datafederationEntity,
+		"create",
+		dataFederationName,
+		"--awsRoleId", roleID,
+		"--awsTestS3Bucket", testBucket,
+	}
+	if projectID != "" {
+		args = append(args, "--projectId", projectID)
+	}
+	create := exec.Command(cliPath, args...)
+	create.Env = os.Environ()
+	if resp, err := create.CombinedOutput(); err != nil {
+		return "", fmt.Errorf("error creating data federation %w: %s", err, string(resp))
+	}
+
+	return dataFederationName, nil
+
+	// opts := &atlasv2.DataLakeTenant{}
+	// opts.Name = name
+	// opts.CloudProviderConfig.Aws = &atlasV1.DataProcessRegion{
+	// 	CloudProvider: "AWS",
+	// 	Region:        "US__EAST_1",
+	// }
+
+	// atlasClient, err := atlas.Client(AtlasDomain, connection, log)
+
+	// if err != nil {
+	// 	return "", err
+	// }
+	// return *dataFed.Name, nil
 }
 
 func deleteDataFederationForProject(projectID, dataFedName string) error {
-	var client *atlasv2.APIClient
-	_, _, err := client.DataFederationApi.DeleteFederatedDatabase(context.Background(), projectID, dataFedName).Execute()
-	return err
+	cliPath, err := e2e.AtlasCLIBin()
+	if err != nil {
+		return err
+	}
+	args := []string{
+		datafederationEntity,
+		"delete",
+		dataFedName,
+		"--force",
+	}
+	if projectID != "" {
+		args = append(args, "--projectId", projectID)
+	}
+	deleteCmd := exec.Command(cliPath, args...)
+	deleteCmd.Env = os.Environ()
+	if resp, err := deleteCmd.CombinedOutput(); err != nil {
+		return fmt.Errorf("error deleting data federation %w: %s", err, string(resp))
+	}
+	return nil
 }
 
 func ensureCluster(t *testing.T, cluster *atlasv2.AdvancedClusterDescription, clusterName, version string, diskSizeGB float64, terminationProtection bool) {

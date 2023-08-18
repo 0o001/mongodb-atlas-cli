@@ -1599,7 +1599,9 @@ func TestKubernetesConfigGenerate_DataFederation(t *testing.T) {
 	g := newAtlasE2ETestGenerator(t)
 	g.generateProject(fmt.Sprintf("kubernetes-%s", n))
 	g.generateDataFederation()
+
 	expectedDataFederation := referenceDataFederation(g.dataFedName, targetNamespace, g.projectName, expectedLabels)
+
 	cliPath, err := e2e.AtlasCLIBin()
 	require.NoError(t, err)
 
