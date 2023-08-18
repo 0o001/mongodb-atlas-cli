@@ -1514,7 +1514,7 @@ func atlasBackupSchedule(objects []runtime.Object) (*atlasV1.AtlasBackupSchedule
 	return nil, false
 }
 
-func referenceDataFederation(name, namespace, region, projectName string, labels map[string]string) *atlasV1.AtlasDataFederation {
+func referenceDataFederation(name, namespace, projectName string, labels map[string]string) *atlasV1.AtlasDataFederation {
 	dictionary := resources.AtlasNameToKubernetesName()
 	return &atlasV1.AtlasDataFederation{
 		TypeMeta: v1.TypeMeta{
@@ -1597,10 +1597,9 @@ func TestKubernetesConfigGenerate_DataFederation(t *testing.T) {
 	n, err := e2e.RandInt(255)
 	require.NoError(t, err)
 	g := newAtlasE2ETestGenerator(t)
-	g.enableBackup = true
 	g.generateProject(fmt.Sprintf("kubernetes-%s", n))
 	g.generateDataFederation()
-	//expectedDataFederation := referenceDataFederation()
+	expectedDataFederation := referenceDataFederation(g.dataFedName, targetNamespace, g.projectName, expectedLabels)
 	cliPath, err := e2e.AtlasCLIBin()
 	require.NoError(t, err)
 
@@ -1637,6 +1636,21 @@ func TestKubernetesConfigGenerate_DataFederation(t *testing.T) {
 			}
 			assert.Equal(t, targetNamespace, p.Namespace)
 		})
-
+		t.Run("Deployment present with valid data", func(t *testing.T) {
+			found := false
+			var datafederation *atlasV1.AtlasDataFederation
+			var ok bool
+			for i := range objects {
+				datafederation, ok = objects[i].(*atlasV1.AtlasDataFederation)
+				if ok {
+					found = true
+					break
+				}
+			}
+			if !found {
+				t.Fatal("AtlasDataFederation is not found in results")
+			}
+			a.Equal(expectedDataFederation, datafederation)
+		})
 	})
 }
